@@ -21,10 +21,11 @@ class File(object):
 			self.name = pth.split(self.filepath)[1]
 			self.stats =  os.stat(self.filepath)
 			self.size = self.stats.st_size
-			self.creation_dttm = int(self.stats.st_ctime)
-			self.modification_dttm = int(self.stats.st_mtime)
-			self.attrs = [self.filepath,self.name,self.size,datetime.fromtimestamp(self.creation_dttm),datetime.fromtimestamp(self.modification_dttm)]
+			self.creation_ts = int(self.stats.st_ctime)
+			self.modification_ts = int(self.stats.st_mtime)
+			self.attrs = [self.filepath,self.name,self.size,datetime.fromtimestamp(self.creation_ts),datetime.fromtimestamp(self.modification_ts)]
 		except NameError as x:
+			self.filepath,self.dir,self.name,self.stats,self.size,self.creation_ts,self.modification_ts,self.attrs = [None]*8
 			print(x)
 			
 			
@@ -32,10 +33,10 @@ class File(object):
 		return self.size
 	
 	def getModificationDate(self):
-		return self.modification_dttm
+		return self.modification_ts
 		
 	def getCreationDate(self):
-		return self.creation_dttm
+		return self.creation_ts
 		
 	def __gt__(self,filepath2): # GREATER
 		return self.size > filepath2.size
@@ -53,32 +54,35 @@ class File(object):
 		return self.size <= filepath2.size
 	
 	def newerCr(self,filepath2):
-		return self.creation_dttm > filepath2.creation_dttm
+		return self.creation_ts > filepath2.creation_ts
 		
 	def olderCr(self,filepath2):
-		return self.creation_dttm < filepath2.creation_dttm
+		return self.creation_ts < filepath2.creation_ts
 		
 	def equalCr(self,filepath2):
-		return self.creation_dttm == filepath2.creation_dttm
+		return self.creation_ts == filepath2.creation_ts
 	
 	def newerMod(self,filepath2):
-		return self.modification_dttm > filepath2.modification_dttm
+		return self.modification_ts > filepath2.modification_ts
 		
 	def olderMod(self,filepath2):
-		return self.modification_dttm < filepath2.modification_dttm
+		return self.modification_ts < filepath2.modification_ts
 		
 	def equalMod(self,filepath2):
-		return self.modification_dttm == filepath2.modification_dttm
+		return self.modification_ts == filepath2.modification_ts
 		
 	def equalAll(self,filepath2,size_flg=1,cr_flg=1,mod_flg=1,name_flg=1):
-		eq = lambda x,y: 1 if not(x) else y
-		return all([eq(size_flg,self.__eq__(filepath2)),eq(mod_flg,self.equalMod(filepath2)),eq(cr_flg,self.equalCr(filepath2))])### FIX
+		eq = lambda x,y: True if not(x) else y
+		return all([eq(size_flg,self.__eq__(filepath2)),eq(mod_flg,self.equalMod(filepath2)),eq(cr_flg,self.equalCr(filepath2)),eq(name_flg,self.name==filepath2.name)])### FIX
 		
 	def setName(self,newname):
-		newpath = pth.join(self.dir,newname)
-		os.rename(self.filepath,newpath)
-		self.__init__(newpath)
-		return self.filepath
+		try:
+			newpath = pth.join(self.dir,newname)
+			os.rename(self.filepath,newpath)
+			self.__init__(newpath)
+			return self.filepath
+		except (AttributeError,TypeError) as x:
+			return(x)
 	
 	def getName(self):
 		return self.name
@@ -89,74 +93,17 @@ class File(object):
 		return "Moving %s ==> %s" % (self.name,newname)
 		
 	def __str__(self):
-		return """
-		File: {1}
-		Directory: {0}
-		size(bytes): {2}
-		creation date: {3}
-		modification date: {4}
-		""".format(*self.attrs)
+		try:
+			return """
+			File: {1}
+			Directory: {0}
+			size(bytes): {2}
+			creation date: {3}
+			modification date: {4}
+			""".format(*self.attrs)
+		except TypeError as x:
+			return "File doesn't exist!"
 		
-
-f1 = File("C:\\nauka_python\\disk_cleaner\\test1\\doc_1.txt")
-f2 = File("C:\\nauka_python\\disk_cleaner\\test1\\doc_2.txt")
-f3 = File("C:\\nauka_python\\disk_cleaner\\test1\\doc_3.txt")
-f4 = File("C:\\nauka_python\\disk_cleaner\\test1\\doc_1.txt")
-
-print(id(f1))
-print(id(f2))
-print(id(f3))
-print(id(f4))
-print(f1)
-print(f2)
-print(f3)
-print(f4)
-print(File._instances)
-# print(len(File.indexes.items()))
-
-# for k,v in File.indexes.items():
-	# print(k,v)
-	
-# print(dir(f1))
-# print(id(f1))
-# print(id(f4))
-
-# print(f1)
-# print(f2)
-# print (f1 > f2)
-# print (f1 < f2)
-# print (f1 == f2)
-# print (f2 == f1)
-# print (f1 > f3)
-# print (f1 < f3)
-# print (f1 == f3)
-# print (f1 >= f3)
-# print (f1 <= f3)
-# print (f2 >= f1)
-# print (f2 <= f1)
-# print (f1.newerCr(f2))
-# print (f1.olderCr(f2))
-# print (f2.equalMod(f3))
-# print (f2.equalCr(f3))
-# print(f1)
-# print(f2)
-# print(f3)
-
-# print(f3.equalAll(f1))
-# print(f3.equalAll(f2,cr_flg=0))
-# print(f3.equalAll(f2))
-# print(f3.equalAll(f2,mod_flg=0))
-
-# f4 = File("C:\\nauka_python\\disk_cleaner\\test1\\abcd_new.txt")
-# print(f4)
-# print(f4.setName("abcd.txt"))
-# print(f4)
-# print(f4.filepath)
-# f4.setName("abcd.txt")
-# print(f4)
-# print(f4.filepath)
-
-
 class Dir(File):
 	
 	def __init__(self,dirpath):
@@ -166,8 +113,8 @@ class Dir(File):
 			self.parent = pth.split(self.dirpath)[0]
 			self.name = pth.split(self.dirpath)[1]
 			self.stats =  os.stat(self.dirpath)
-			self.creation_dttm = int(self.stats.st_ctime)
-			self.modification_dttm = int(self.stats.st_mtime)
+			self.creation_ts = int(self.stats.st_ctime)
+			self.modification_ts = int(self.stats.st_mtime)
 			self.files=[]
 			self.subdirs=[]
 			self.size = 0
@@ -179,17 +126,18 @@ class Dir(File):
 					self.files.append(f)
 					self.size+=f.size
 					self.nFiles+=1
+					if f.modification_ts > self.modification_ts: self.modification_ts = f.modification_ts
 				elif pth.isdir(pth.join(self.dirpath,item)):
 					d = Dir(pth.join(self.dirpath,item))
 					self.subdirs.append(d)
 					self.size+=d.size
 					self.nSubs+=1
 					self.nFiles+=d.nFiles
-			self.attrs = [self.dirpath,self.name,self.parent,self.size,datetime.fromtimestamp(self.creation_dttm),datetime.fromtimestamp(self.modification_dttm),self.nFiles,self.nSubs]
+					if d.modification_ts > self.modification_ts: self.modification_ts = d.modification_ts
+			self.attrs = [self.dirpath,self.name,self.parent,self.size,datetime.fromtimestamp(self.creation_ts),datetime.fromtimestamp(self.modification_ts),self.nFiles,self.nSubs]
 		except NameError as x:
 			print(x)
-			
-	
+				
 	def __str__(self):
 		return """
 		Directory: {0}
@@ -202,28 +150,39 @@ class Dir(File):
 		Number of subdirs: {7}
 		""".format(*self.attrs)
 		
+	def getModificationDate(self):
+		return datetime.fromtimestamp(self.stats.st_mtime)
+	
+	def getCreationDate(self):
+		return datetime.fromtimestamp(self.stats.st_ctime)
+
+	def setName(self,newname):
+		try:
+			newpath = pth.join(self.parent,newname)
+			os.rename(self.dirpath,newpath)
+			self.__init__(newpath)
+			return self.dirpath
+		except (AttributeError,TypeError) as x:
+			return(x)
+	
+	def gtNOFiles(self,dirpath2):
+		return self.nFiles > dirpath2.nFiles
 		
-			
-# d1 = Dir("C:\\nauka_python\\disk_cleaner\\test1")
-# print(d1)
-# # print(d1.files)
-# # print(d1.subdirs)
+	def eqNOFiles(self,dirpath2):
+		return self.nFiles == dirpath2.nFiles
+	
+	def ltNOFiles(self,dirpath2):
+		return self.nFiles < dirpath2.nFiles
+		
+	def geNOFiles(self,dirpath2):
+		return self.nFiles >= dirpath2.nFiles
+	
+	def leNOFiles(self,dirpath2):
+		return self.nFiles <= dirpath2.nFiles
 
-# # for f in d1.files:
-	# # print(f)
-# # for d in d1.subdirs:
-	# # print(d)
-# tmp = os.walk("C:\\nauka_python\\disk_cleaner\\test1")
-
-# for dir,subdirs,files in tmp:
-	# print("DIRECTORY %s" % dir)
-	# d = Dir(dir)
-	# print(d)
-	# print("FILES:")
-	# for ff in d.files:
-		# print(ff)
-	# print("SUBDIRS:")
-	# for dd in d.subdirs:
-		# print(dd)
-
-# # print(os.listdir("C:\\nauka_python\\disk_cleaner\\test1"))
+	def equalAll(self,filepath2,size_flg=1,cr_flg=1,mod_flg=1,name_flg=1,noFiles_flg=1,noSubd_flg=1):
+		eq = lambda x,y: True if not(x) else y
+		return all([eq(size_flg,self.__eq__(filepath2)),eq(mod_flg,self.equalMod(filepath2)),eq(cr_flg,self.equalCr(filepath2)),eq(name_flg,self.name==filepath2.name),eq(noFiles_flg,self.eqNOFiles(filepath2)),eq(noSubd_flg,self.nSubs==filepath2.nSubs)])
+		
+	# name size cr_td md_ts NoF noSubd
+	
